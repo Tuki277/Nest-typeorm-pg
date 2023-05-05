@@ -13,6 +13,11 @@ export class CategoryService {
   }
 
   async findAll() {
+    // const qb = await this.categoryRepository.createQueryBuilder('category');
+    // return await this.categoryRepository.parsePaginate(qb, {
+    //   take: req.params.page,
+    //   skip: req.params.rowperpage,
+    // });
     return await this.categoryRepository.find({});
   }
 

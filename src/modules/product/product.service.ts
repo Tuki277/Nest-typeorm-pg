@@ -6,6 +6,7 @@ import { Product } from './entities/product.entity';
 import { CategoryRepository } from '../category/category.repository';
 import { In } from 'typeorm';
 import { ColorRepository } from '../color/color.repository';
+import { Request } from 'express';
 
 @Injectable()
 export class ProductService {
@@ -35,9 +36,28 @@ export class ProductService {
     }
   }
 
-  async findAll() {
-    return await this.productRepository.find({
-      relations: ['category', 'color'],
+  async findAll(req: Request) {
+    // await this.productRepository.find({
+    //   relations: ['category', 'color'],
+    // });
+    let qb = await this.productRepository
+      .createQueryBuilder('product')
+      .leftJoinAndSelect('product.category', 'category')
+      .leftJoinAndSelect('product.color', 'color');
+
+    if (req.query.s) {
+      const sq: string = req.query.s.toString();
+      qb = await this.productRepository._queryLike('product', 'name', sq, qb);
+    }
+
+    if (req.query.sort) {
+      const s: any = req.query.sort.toString();
+      qb = qb.orderBy('product.name', s.toUpperCase());
+    }
+
+    return await this.productRepository.parsePaginate(qb, {
+      take: req.query.page,
+      skip: req.query.rowperpage,
     });
   }
 
