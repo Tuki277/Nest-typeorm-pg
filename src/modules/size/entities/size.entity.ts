@@ -1,4 +1,5 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Product } from 'src/modules/product/entities/product.entity';
+import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity()
 export class Size {
@@ -7,4 +8,7 @@ export class Size {
 
   @Column('varchar', { nullable: true })
   name: string;
+
+  @OneToMany(() => Product, (p) => p.size)
+  product: Product[];
 }

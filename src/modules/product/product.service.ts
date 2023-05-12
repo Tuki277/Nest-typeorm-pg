@@ -7,6 +7,7 @@ import { CategoryRepository } from '../category/category.repository';
 import { In } from 'typeorm';
 import { ColorRepository } from '../color/color.repository';
 import { Request } from 'express';
+import { SizeRepository } from '../size/size.repository';
 
 @Injectable()
 export class ProductService {
@@ -14,6 +15,7 @@ export class ProductService {
     private productRepository: ProductRepository,
     private categoryRepository: CategoryRepository,
     private colorRepository: ColorRepository,
+    private sizeRepository: SizeRepository,
   ) {}
 
   async create(createProductDto: CreateProductDto) {
@@ -24,12 +26,16 @@ export class ProductService {
     const color = await this.colorRepository.findBy({
       id: In(createProductDto.color),
     });
+    const size = await this.sizeRepository.findOne({
+      where: { id: createProductDto.size },
+    });
     if (category) {
       console.log(category);
       p.name = createProductDto.name;
       p.description = createProductDto.description;
       p.category = category;
       p.color = color;
+      p.size = size;
       return await this.productRepository.save(p);
     } else {
       throw new NotFoundException('Category not found');
@@ -43,7 +49,8 @@ export class ProductService {
     let qb = await this.productRepository
       .createQueryBuilder('product')
       .leftJoinAndSelect('product.category', 'category')
-      .leftJoinAndSelect('product.color', 'color');
+      .leftJoinAndSelect('product.color', 'color')
+      .leftJoinAndSelect('product.size', 'size');
 
     if (req.query.s) {
       const sq: string = req.query.s.toString();
@@ -68,8 +75,31 @@ export class ProductService {
     });
   }
 
-  update(id: number, updateProductDto: UpdateProductDto) {
-    return `This action updates a #${id} product`;
+  async update(id: number, updateProductDto: UpdateProductDto) {
+    const category = await this.categoryRepository.findBy({
+      id: In(updateProductDto.category),
+    });
+    const color = await this.colorRepository.findBy({
+      id: In(updateProductDto.color),
+    });
+    const size = await this.sizeRepository.findOne({
+      where: { id: updateProductDto.size },
+    });
+    if (category) {
+      const p = await this.productRepository.findOne({
+        where: { id },
+        relations: ['color', 'category', 'size'],
+      });
+      console.log(p);
+      p.name = updateProductDto.name;
+      p.description = updateProductDto.description;
+      p.size = size;
+      p.category = category;
+      p.color = color;
+      return await this.productRepository.save(p);
+    } else {
+      throw new NotFoundException('Category not found');
+    }
   }
 
   async remove(id: number) {
